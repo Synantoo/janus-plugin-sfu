@@ -445,6 +445,7 @@ fn process_join(from: &Arc<Session>, room_id: RoomId, user_id: UserId, subscribe
 
     let mut switchboard = SWITCHBOARD.write()?;
     let body = json!({ "users": { room_id.as_str(): switchboard.get_users(&room_id) }});
+    janus_info!("Preparing json response in process_join {}.", body);
 
     // hack -- use data channel subscription to infer this, it would probably be nicer if
     // connections announced explicitly whether they were a publisher or subscriber
@@ -468,6 +469,7 @@ fn process_join(from: &Arc<Session>, room_id: RoomId, user_id: UserId, subscribe
         let notification = json!({ "event": "join", "user_id": user_id, "room_id": room_id });
         switchboard.join_publisher(Arc::clone(from), user_id.clone(), room_id.clone());
         notify_except(&notification, &user_id, switchboard.publishers_occupying(&room_id));
+        janus_info!("Sent join event to other occupants {}.", notification);
     } else {
         switchboard.join_subscriber(Arc::clone(from), user_id.clone(), room_id.clone());
     }
