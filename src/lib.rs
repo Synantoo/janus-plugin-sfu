@@ -440,7 +440,8 @@ fn process_join(from: &Arc<Session>, room_id: RoomId, user_id: UserId, subscribe
     }
 
     let mut switchboard = SWITCHBOARD.write()?;
-    let body = json!({ "users": { room_id.as_str(): switchboard.get_users(&room_id) }});
+    let users = switchboard.get_users(&room_id);
+    let body = json!({ "users": { room_id.as_str(): users }});
     janus_info!("Preparing json response in process_join {}.", body);
 
     // hack -- use data channel subscription to infer this, it would probably be nicer if
@@ -449,6 +450,12 @@ fn process_join(from: &Arc<Session>, room_id: RoomId, user_id: UserId, subscribe
     let join_kind = if gets_data_channel { JoinKind::Publisher } else { JoinKind::Subscriber };
 
     if join_kind == JoinKind::Publisher {
+        if users.contains(&user_id) {
+            // Already have a publisher session for this user_id
+            // The client (naf-janus-adapter) will try to reconnect after 10s.
+            janus_info!("Already have a publisher session for this user_id {}.", user_id);
+            return Ok(MessageResponse::msg(body));
+        }
         if switchboard.occupants_of(&room_id).len() > config.max_room_size {
             return Err(From::from("Room is full."));
         }
