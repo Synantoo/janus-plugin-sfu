@@ -607,7 +607,9 @@ fn process_message(from: &Arc<Session>, msg: MessageKind) -> MessageResult {
             token,
         } => process_join(from, room_id, user_id, subscribe, token),
         MessageKind::Kick { room_id, user_id, token } => process_kick(from, room_id, user_id, token),
-        MessageKind::Subscribe { what } => process_subscribe(from, &what),
+// process_subscribe doesn't check the JWT, we need to change the API to add room_id and token,
+// comment it for now.
+//        MessageKind::Subscribe { what } => process_subscribe(from, &what),
         MessageKind::Block { whom } => process_block(from, whom),
         MessageKind::Unblock { whom } => process_unblock(from, whom),
         MessageKind::Data { whom, body } => process_data(from, whom, &body),
